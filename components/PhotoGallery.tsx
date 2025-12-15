@@ -104,22 +104,13 @@ function easeInOutCubic(x: number): number {
 
 // --- Frame Component ---
 
-interface ChristmasFilmFrameProps {
-  url: string;
-  positionData: any;
-  index: number;
-  total: number;
-  appState: AppState;
-  treeGroupRef: React.RefObject<THREE.Group>;
-}
-
-const ChristmasFilmFrame: React.FC<ChristmasFilmFrameProps> = ({ 
-  url, 
-  positionData, 
-  index, 
-  total, 
-  appState, 
-  treeGroupRef 
+const ChristmasFilmFrame = ({ url, positionData, index, total, appState, treeGroupRef }: { 
+  url: string, 
+  positionData: any, 
+  index: number, 
+  total: number, 
+  appState: AppState,
+  treeGroupRef: React.RefObject<THREE.Group>
 }) => {
   const meshRef = useRef<THREE.Group>(null);
   const texture = useLoader(THREE.TextureLoader, url);
@@ -201,14 +192,14 @@ const ChristmasFilmFrame: React.FC<ChristmasFilmFrameProps> = ({
         const cycleIndex = Math.floor(time / CYCLE_DURATION);
         const cyclePhase = time % CYCLE_DURATION;
         
-        // Reverse direction: Negative index moves items Left-to-Right
-        let scrollIndex = cycleIndex;
+        // Reverse direction: Negative index moves items Left-to-Right (Previous logic)
+        let scrollIndex = -cycleIndex;
 
         // If we are in the MOVE phase, interpolate to next index
         if (cyclePhase > HOLD_DURATION) {
             const moveProgress = (cyclePhase - HOLD_DURATION) / MOVE_DURATION;
             // Use easing for smooth slide
-            scrollIndex += easeInOutCubic(moveProgress);
+            scrollIndex -= easeInOutCubic(moveProgress);
         } else {
             // We are in HOLD phase
         }
@@ -321,11 +312,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, appState, treeGroup
     const baseRadius = 7.5;
     const yMin = -10; // Lowest point
     const yMax = 7;   // Highest point (avoiding the very top star)
-    
-    // Minimum distance between photo centers to avoid overlap
-    // Frame visual width is ~3.5 units (1.4 * 2.5)
-    // We add a bit of buffer
-    const minDistance = 3.6; 
+    const minDistance = 2.2; // Minimum distance between photo centers to avoid overlap
 
     // Fallback spiral generator for when random placement fails
     const getSpiralPos = (index: number, count: number) => {
@@ -343,7 +330,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, appState, treeGroup
         
         // Attempt random placement with collision detection
         // Limit attempts to prevent infinite loop
-        const maxAttempts = 100; 
+        const maxAttempts = 30; 
         
         for(let attempt = 0; attempt < maxAttempts; attempt++) {
             // 1. Random Height within range
@@ -386,8 +373,6 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, appState, treeGroup
 
         // Fallback if collision check failed repeatedly
         if (!valid) {
-            // Try to find a spot that is "farthest" from others or just fallback
-            // To ensure we don't skip, use spiral or just accept overlaps in worst case
             bestPos = getSpiralPos(i, photos.length);
         }
 
@@ -399,14 +384,17 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ photos, appState, treeGroup
         dummy.lookAt(0, bestPos.y, 0); 
         dummy.rotateY(Math.PI); 
 
-        // 2. Add Random Jitter (Limited to +/- 10 degrees)
-        const maxDeg = 10;
-        const maxRad = THREE.MathUtils.degToRad(maxDeg);
+        // 2. Add Random Jitter (But prevent upside down)
         
-        // Random range [-maxRad, +maxRad]
-        const xJitter = (Math.random() - 0.5) * 2 * maxRad; 
-        const yJitter = (Math.random() - 0.5) * 2 * maxRad;
-        const zJitter = (Math.random() - 0.5) * 2 * maxRad; 
+        // Tilt Up/Down (X-axis): +/- 20 degrees
+        const xJitter = (Math.random() - 0.5) * 0.7; 
+        
+        // Pan Left/Right (Y-axis): +/- 20 degrees
+        const yJitter = (Math.random() - 0.5) * 0.7;
+        
+        // Roll (Z-axis): STRICT LIMIT to prevent upside down
+        // Limit to approx +/- 25 degrees (0.45 radians)
+        const zJitter = (Math.random() - 0.5) * 0.9; 
 
         dummy.rotation.x += xJitter;
         dummy.rotation.y += yJitter;

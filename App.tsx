@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Loader } from '@react-three/drei';
 import Experience from './components/Experience';
@@ -20,7 +20,7 @@ const App: React.FC = () => {
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      const newPhotos = Array.from(event.target.files).map((file: File) => URL.createObjectURL(file));
+      const newPhotos = Array.from(event.target.files).map(file => URL.createObjectURL(file));
       setUserPhotos(prev => [...prev, ...newPhotos]);
     }
   };
@@ -31,33 +31,6 @@ const App: React.FC = () => {
 
   const handleGestureUpdate = useCallback((newState: HandGestureState) => {
     setHandState(newState);
-  }, []);
-
-  // --- Fullscreen Logic ---
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check for Ctrl + Shift + H
-      if (e.ctrlKey && e.shiftKey && (e.key === 'h' || e.key === 'H')) {
-        e.preventDefault(); // Prevent potential browser conflicts
-        
-        if (!document.fullscreenElement) {
-          // Enter Fullscreen
-          document.documentElement.requestFullscreen().catch((err) => {
-            console.error(`Error attempting to enable fullscreen: ${err.message}`);
-          });
-        } else {
-          // Exit Fullscreen (Optional, as ESC does this natively, but good for toggle)
-          if (document.exitFullscreen) {
-            document.exitFullscreen();
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
   }, []);
 
   return (
